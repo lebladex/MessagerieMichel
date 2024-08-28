@@ -166,23 +166,35 @@
             updateOnlineUsers();
         }
 
-        function login(e) {
-            e.preventDefault();
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
-            const users = JSON.parse(localStorage.getItem('users')) || {};
-            if (users[username] && verifyPassword(password, users[username].password)) {
-                currentUser = username;
-                isAdmin = users[username].isAdmin || false;
-                sessionStorage.setItem('currentUser', username);
-                sessionStorage.setItem('isAdmin', isAdmin);
-                showChatInterface();
-                setUserOnlineStatus(username, true);
-            } else {
-                alert('Nom d\'utilisateur ou mot de passe incorrect');
-            }
+function login(e) {
+    e.preventDefault();
+    const username = document.getElementById('login-username').value;
+    const password = document.getElementById('login-password').value;
+    const users = JSON.parse(localStorage.getItem('users')) || {};
+    
+    console.log('Tentative de connexion pour:', username);
+    console.log('Utilisateurs enregistrés:', users);
+    
+    if (users[username]) {
+        console.log('Utilisateur trouvé, vérification du mot de passe');
+        const isPasswordCorrect = verifyPassword(password, users[username].password);
+        console.log('Mot de passe correct:', isPasswordCorrect);
+        
+        if (isPasswordCorrect) {
+            currentUser = username;
+            isAdmin = users[username].isAdmin || false;
+            sessionStorage.setItem('currentUser', username);
+            sessionStorage.setItem('isAdmin', isAdmin);
+            showChatInterface();
+            setUserOnlineStatus(username, true);
+        } else {
+            alert('Nom d\'utilisateur ou mot de passe incorrect');
         }
-
+    } else {
+        console.log('Utilisateur non trouvé');
+        alert('Nom d\'utilisateur ou mot de passe incorrect');
+    }
+}
         function logout() {
             setUserOnlineStatus(currentUser, false);
             currentUser = null;
