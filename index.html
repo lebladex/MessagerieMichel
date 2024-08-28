@@ -231,8 +231,15 @@ function login(e) {
         console.log('Mot de passe correct:', isPasswordCorrect);
         
         if (isPasswordCorrect) {
-            // ... (reste du code inchangé)
+            console.log('Connexion réussie pour:', username);
+            currentUser = username;
+            isAdmin = users[username].isAdmin || false;
+            sessionStorage.setItem('currentUser', username);
+            sessionStorage.setItem('isAdmin', isAdmin);
+            showChatInterface();
+            setUserOnlineStatus(username, true);
         } else {
+            console.log('Échec de la connexion: mot de passe incorrect');
             alert('Nom d\'utilisateur ou mot de passe incorrect');
         }
     } else {
@@ -460,6 +467,7 @@ function login(e) {
             document.getElementById('private-chat').style.display = 'none';
             document.getElementById('create-user-form').style.display = 'none';
             document.getElementById('user-list').style.display = 'none';
+            document.getElementById('login-form-element').addEventListener('submit', login);
             privateMessageUser = null;
         });
 
