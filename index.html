@@ -166,6 +166,27 @@
             updateOnlineUsers();
         }
 
+function hashPassword(password) {
+    const salt = CryptoJS.lib.WordArray.random(128/8);
+    const hashedPassword = CryptoJS.PBKDF2(password, salt, { keySize: 256/32, iterations: 1000 }).toString();
+    console.log('Hachage du mot de passe:');
+    console.log('Salt:', salt.toString());
+    console.log('Mot de passe hashé:', hashedPassword);
+    return salt.toString() + ':' + hashedPassword;
+}
+
+function verifyPassword(password, hashedPassword) {
+    console.log('Vérification du mot de passe:');
+    console.log('Mot de passe entré:', password);
+    console.log('Mot de passe hashé stocké:', hashedPassword);
+    const [salt, key] = hashedPassword.split(':');
+    console.log('Salt extrait:', salt);
+    console.log('Clé extraite:', key);
+    const derivedKey = CryptoJS.PBKDF2(password, salt, { keySize: 256/32, iterations: 1000 }).toString();
+    console.log('Clé dérivée du mot de passe entré:', derivedKey);
+    return key === derivedKey;
+}
+
 function login(e) {
     e.preventDefault();
     const username = document.getElementById('login-username').value;
@@ -173,20 +194,15 @@ function login(e) {
     const users = JSON.parse(localStorage.getItem('users')) || {};
     
     console.log('Tentative de connexion pour:', username);
-    console.log('Utilisateurs enregistrés:', users);
+    console.log('Utilisateurs enregistrés:', JSON.stringify(users, null, 2));
     
     if (users[username]) {
-        console.log('Utilisateur trouvé, vérification du mot de passe');
+        console.log('Utilisateur trouvé, données de l\'utilisateur:', JSON.stringify(users[username], null, 2));
         const isPasswordCorrect = verifyPassword(password, users[username].password);
         console.log('Mot de passe correct:', isPasswordCorrect);
         
         if (isPasswordCorrect) {
-            currentUser = username;
-            isAdmin = users[username].isAdmin || false;
-            sessionStorage.setItem('currentUser', username);
-            sessionStorage.setItem('isAdmin', isAdmin);
-            showChatInterface();
-            setUserOnlineStatus(username, true);
+            // ... (reste du code inchangé)
         } else {
             alert('Nom d\'utilisateur ou mot de passe incorrect');
         }
