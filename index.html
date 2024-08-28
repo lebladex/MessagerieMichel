@@ -36,6 +36,23 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Se connecter</button>
             </form>
+            <button onclick="showRegisterForm()" class="btn btn-secondary mt-2">S'inscrire</button>
+        </div>
+
+        <div id="register-form" style="display: none;">
+            <h2>Inscription</h2>
+            <form id="register-form-element">
+                <div class="mb-3">
+                    <input type="text" class="form-control" id="register-username" placeholder="Nom d'utilisateur" required>
+                </div>
+                <div class="mb-3">
+                    <input type="password" class="form-control" id="register-password" placeholder="Mot de passe" required>
+                </div>
+                <div class="mb-3">
+                    <input type="email" class="form-control" id="register-email" placeholder="Email" required>
+                </div>
+                <button type="submit" class="btn btn-primary">S'inscrire</button>
+            </form>
         </div>
 
         <div id="chat-interface" style="display: none;">
@@ -95,15 +112,37 @@
                         <ul id="user-list-content" class="list-group">
                         </ul>
                     </div>
+                    <div id="profile-container" style="display: none;">
+                        <h3>Profil de <span id="profile-username"></span></h3>
+                        <div class="profile-info">
+                            <p>Email: <span id="profile-email"></span></p>
+                            <p>Bio: <span id="profile-bio"></span></p>
+                        </div>
+                        <button onclick="showEditProfileForm()" class="btn btn-primary">Modifier le profil</button>
+                    </div>
+                    <div id="edit-profile-form" style="display: none;">
+                        <h3>Modifier le profil</h3>
+                        <form id="edit-profile-form-element">
+                            <div class="mb-3">
+                                <input type="email" class="form-control" id="edit-email" placeholder="Nouvel email">
+                            </div>
+                            <div class="mb-3">
+                                <textarea class="form-control" id="edit-bio" placeholder="Nouvelle bio"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Mettre à jour</button>
+                        </form>
+                    </div>
                 </div>
             </div>
             <button id="logout-button" class="btn btn-secondary mt-3">Se déconnecter</button>
+            <button onclick="showProfile()" class="btn btn-info mt-3">Mon Profil</button>
         </div>
     </div>
 
     <script>
         // Éléments DOM
         const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
         const chatInterface = document.getElementById('chat-interface');
         const messagesDiv = document.getElementById('messages');
         const messageForm = document.getElementById('message-form');
@@ -114,6 +153,8 @@
         const logoutButton = document.getElementById('logout-button');
         const adminPanel = document.getElementById('admin-panel');
         const createUserForm = document.getElementById('create-user-form');
+        const profileContainer = document.getElementById('profile-container');
+        const editProfileForm = document.getElementById('edit-profile-form');
 
         // Variables globales
         let currentUser = null;
@@ -132,40 +173,51 @@
             return bytes.toString(CryptoJS.enc.Utf8);
         }
 
-function hashPassword(password) {
-    const salt = CryptoJS.lib.WordArray.random(128/8);
-    const hashedPassword = CryptoJS.PBKDF2(password, salt, { keySize: 256/32, iterations: 1000 }).toString();
-    console.log('Hachage du mot de passe:');
-    console.log('Salt:', salt.toString());
-    console.log('Mot de passe hashé:', hashedPassword);
-    return salt.toString() + ':' + hashedPassword;
-}
+        function hashPassword(password) {
+            const salt = CryptoJS.lib.WordArray.random(128/8);
+            const key = CryptoJS.PBKDF2(password, salt, { keySize: 256/32, iterations: 1000 });
+            console.log('Hachage du mot de passe:');
+            console.log('Salt:', salt.toString());
+            console.log('Mot de passe hashé:', key.toString());
+            return salt.toString() + ':' + key.toString();
+        }
 
-       function verifyPassword(password, storedHash) {
-    console.log('Vérification du mot de passe:');
-    console.log('Mot de passe entré:', password);
-    console.log('Hash stocké:', storedHash);
-    const [storedSalt, storedKey] = storedHash.split(':');
-    console.log('Salt stocké:', storedSalt);
-    console.log('Clé stockée:', storedKey);
-    const derivedKey = CryptoJS.PBKDF2(password, storedSalt, { keySize: 256/32, iterations: 1000 }).toString();
-    console.log('Clé dérivée du mot de passe entré:', derivedKey);
-    return storedKey === derivedKey;
-}
+        function verifyPassword(password, storedHash) {
+            console.log('Vérification du mot de passe:');
+            console.log('Mot de passe entré:', password);
+            console.log('Hash stocké:', storedHash);
+            const [storedSalt, storedKey] = storedHash.split(':');
+            console.log('Salt stocké:', storedSalt);
+            console.log('Clé stockée:', storedKey);
+            const salt = CryptoJS.enc.Hex.parse(storedSalt);
+            const derivedKey = CryptoJS.PBKDF2(password, salt, { keySize: 256/32, iterations: 1000 });
+            console.log('Clé dérivée du mot de passe entré:', derivedKey.toString());
+            return storedKey === derivedKey.toString();
+        }
 
         // Fonctions d'authentification
         function showLoginForm() {
             loginForm.style.display = 'block';
+            registerForm.style.display = 'none';
+            chatInterface.style.display = 'none';
+        }
+
+        function showRegisterForm() {
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
             chatInterface.style.display = 'none';
         }
 
         function showChatInterface() {
             loginForm.style.display = 'none';
+            registerForm.style.display = 'none';
             chatInterface.style.display = 'block';
             document.getElementById('public-chat').style.display = 'block';
             document.getElementById('private-chat').style.display = 'none';
             document.getElementById('create-user-form').style.display = 'none';
             document.getElementById('user-list').style.display = 'none';
+            profileContainer.style.display = 'none';
+            editProfileForm.style.display = 'none';
             if (isAdmin) {
                 adminPanel.style.display = 'block';
             } else {
@@ -176,77 +228,77 @@ function hashPassword(password) {
             updateOnlineUsers();
         }
 
-function hashPassword(password) {
-    const salt = CryptoJS.lib.WordArray.random(128/8);
-    const key = CryptoJS.PBKDF2(password, salt, { keySize: 256/32, iterations: 1000 });
-    console.log('Hachage du mot de passe:');
-    console.log('Salt:', salt.toString());
-    console.log('Mot de passe hashé:', key.toString());
-    return salt.toString() + ':' + key.toString();
-}
-
-function verifyPassword(password, storedHash) {
-    console.log('Vérification du mot de passe:');
-    console.log('Mot de passe entré:', password);
-    console.log('Hash stocké:', storedHash);
-    const [storedSalt, storedKey] = storedHash.split(':');
-    console.log('Salt stocké:', storedSalt);
-    console.log('Clé stockée:', storedKey);
-    const salt = CryptoJS.enc.Hex.parse(storedSalt);
-    const derivedKey = CryptoJS.PBKDF2(password, salt, { keySize: 256/32, iterations: 1000 });
-    console.log('Clé dérivée du mot de passe entré:', derivedKey.toString());
-    return storedKey === derivedKey.toString();
-}
-
-function createDefaultAdmin() {
-    const users = JSON.parse(localStorage.getItem('users')) || {};
-    if (Object.keys(users).length === 0) {
-        const defaultAdminUsername = 'admin';
-        const defaultAdminPassword = 'admin123';
-        users[defaultAdminUsername] = { 
-            password: hashPassword(defaultAdminPassword),
-            isAdmin: true
-        };
-        localStorage.setItem('users', JSON.stringify(users));
-        console.log('Compte admin par défaut créé:', users[defaultAdminUsername]);
-        alert('Un compte administrateur par défaut a été créé. Utilisateur: admin, Mot de passe: admin123');
-    }
-}
-
-// Appelez cette fonction au chargement de la page
-window.addEventListener('load', createDefaultAdmin);
-
-function login(e) {
-    e.preventDefault();
-    const username = document.getElementById('login-username').value;
-    const password = document.getElementById('login-password').value;
-    const users = JSON.parse(localStorage.getItem('users')) || {};
-    
-    console.log('Tentative de connexion pour:', username);
-    console.log('Utilisateurs enregistrés:', JSON.stringify(users, null, 2));
-    
-    if (users[username]) {
-        console.log('Utilisateur trouvé, données de l\'utilisateur:', JSON.stringify(users[username], null, 2));
-        const isPasswordCorrect = verifyPassword(password, users[username].password);
-        console.log('Mot de passe correct:', isPasswordCorrect);
-        
-        if (isPasswordCorrect) {
-            console.log('Connexion réussie pour:', username);
-            currentUser = username;
-            isAdmin = users[username].isAdmin || false;
-            sessionStorage.setItem('currentUser', username);
-            sessionStorage.setItem('isAdmin', isAdmin);
-            showChatInterface();
-            setUserOnlineStatus(username, true);
-        } else {
-            console.log('Échec de la connexion: mot de passe incorrect');
-            alert('Nom d\'utilisateur ou mot de passe incorrect');
+        function createDefaultAdmin() {
+            const users = JSON.parse(localStorage.getItem('users')) || {};
+            if (Object.keys(users).length === 0) {
+                const defaultAdminUsername = 'admin';
+                const defaultAdminPassword = 'admin123';
+                users[defaultAdminUsername] = { 
+                    password: hashPassword(defaultAdminPassword),
+                    isAdmin: true,
+                    email: 'admin@example.com',
+                    bio: 'Administrateur par défaut'
+                };
+                localStorage.setItem('users', JSON.stringify(users));
+                console.log('Compte admin par défaut créé:', users[defaultAdminUsername]);
+                alert('Un compte administrateur par défaut a été créé. Utilisateur: admin, Mot de passe: admin123');
+            }
         }
-    } else {
-        console.log('Utilisateur non trouvé');
-        alert('Nom d\'utilisateur ou mot de passe incorrect');
-    }
-}
+
+        function login(e) {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const users = JSON.parse(localStorage.getItem('users')) || {};
+            
+            console.log('Tentative de connexion pour:', username);
+            console.log('Utilisateurs enregistrés:', JSON.stringify(users, null, 2));
+            
+            if (users[username]) {
+                console.log('Utilisateur trouvé, données de l\'utilisateur:', JSON.stringify(users[username], null, 2));
+                const isPasswordCorrect = verifyPassword(password, users[username].password);
+                console.log('Mot de passe correct:', isPasswordCorrect);
+                
+                if (isPasswordCorrect) {
+                    console.log('Connexion réussie pour:', username);
+                    currentUser = username;
+                    isAdmin = users[username].isAdmin || false;
+                    sessionStorage.setItem('currentUser', username);
+                    sessionStorage.setItem('isAdmin', isAdmin);
+                    showChatInterface();
+                    setUserOnlineStatus(username, true);
+                } else {
+                    console.log('Échec de la connexion: mot de passe incorrect');
+                    alert('Nom d\'utilisateur ou mot de passe incorrect');
+                }
+            } else {
+                console.log('Utilisateur non trouvé');
+                alert('Nom d\'utilisateur ou mot de passe incorrect');
+            }
+        }
+
+        function register(e) {
+            e.preventDefault();
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+            const email = document.getElementById('register-email').value;
+            const users = JSON.parse(localStorage.getItem('users')) || {};
+
+            if (users[username]) {
+                alert('Ce nom d\'utilisateur existe déjà');
+            } else {
+                users[username] = {
+                    password: hashPassword(password),
+                    email: email,
+                    bio: '',
+                    isAdmin: false
+                };
+                localStorage.setItem('users', JSON.stringify(users));
+                alert('Inscription réussie, vous pouvez maintenant vous connecter');
+                showLoginForm();
+            }
+        }
+
         function logout() {
             setUserOnlineStatus(currentUser, false);
             currentUser = null;
@@ -391,7 +443,9 @@ function login(e) {
             } else {
                 users[username] = { 
                     password: hashPassword(password),
-                    isAdmin: newIsAdmin
+                    isAdmin: newIsAdmin,
+                    email: '',
+                    bio: ''
                 };
                 localStorage.setItem('users', JSON.stringify(users));
                 alert('Utilisateur créé avec succès');
@@ -400,7 +454,7 @@ function login(e) {
             }
         }
 
-          function showUserList() {
+        function showUserList() {
             if (!isAdmin) {
                 alert("Vous n'avez pas les droits d'administrateur pour voir la liste des utilisateurs.");
                 return;
@@ -420,8 +474,49 @@ function login(e) {
             document.getElementById('user-list').style.display = 'block';
         }
 
+        // Fonctions de gestion des profils
+        function showProfile() {
+            const users = JSON.parse(localStorage.getItem('users'));
+            const user = users[currentUser];
+
+            document.getElementById('profile-username').textContent = currentUser;
+            document.getElementById('profile-email').textContent = user.email;
+            document.getElementById('profile-bio').textContent = user.bio || 'Pas de bio pour le moment';
+
+            document.getElementById('public-chat').style.display = 'none';
+            document.getElementById('private-chat').style.display = 'none';
+            document.getElementById('create-user-form').style.display = 'none';
+            document.getElementById('user-list').style.display = 'none';
+            profileContainer.style.display = 'block';
+        }
+
+        function showEditProfileForm() {
+            const users = JSON.parse(localStorage.getItem('users'));
+            const user = users[currentUser];
+
+            document.getElementById('edit-email').value = user.email;
+            document.getElementById('edit-bio').value = user.bio;
+
+            profileContainer.style.display = 'none';
+            editProfileForm.style.display = 'block';
+        }
+
+        function updateProfile(e) {
+            e.preventDefault();
+            const newEmail = document.getElementById('edit-email').value;
+            const newBio = document.getElementById('edit-bio').value;
+            const users = JSON.parse(localStorage.getItem('users'));
+
+            users[currentUser].email = newEmail;
+            users[currentUser].bio = newBio;
+
+            localStorage.setItem('users', JSON.stringify(users));
+            showProfile();
+        }
+
         // Gestionnaires d'événements
         document.getElementById('login-form-element').addEventListener('submit', login);
+        document.getElementById('register-form-element').addEventListener('submit', register);
         logoutButton.addEventListener('click', logout);
         document.getElementById('show-create-user').addEventListener('click', () => {
             document.getElementById('public-chat').style.display = 'none';
@@ -431,6 +526,7 @@ function login(e) {
         });
         document.getElementById('show-user-list').addEventListener('click', showUserList);
         document.getElementById('create-user-form-element').addEventListener('submit', createUser);
+        document.getElementById('edit-profile-form-element').addEventListener('submit', updateProfile);
 
         messageForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -467,7 +563,8 @@ function login(e) {
             document.getElementById('private-chat').style.display = 'none';
             document.getElementById('create-user-form').style.display = 'none';
             document.getElementById('user-list').style.display = 'none';
-            document.getElementById('login-form-element').addEventListener('submit', login);
+            profileContainer.style.display = 'none';
+            editProfileForm.style.display = 'none';
             privateMessageUser = null;
         });
 
@@ -483,19 +580,9 @@ function login(e) {
                 showLoginForm();
             }
 
-            // Création d'un admin par défaut si aucun utilisateur n'existe
-            const users = JSON.parse(localStorage.getItem('users')) || {};
-            if (Object.keys(users).length === 0) {
-                const defaultAdminUsername = 'admin';
-                const defaultAdminPassword = 'admin123';
-                users[defaultAdminUsername] = { 
-                    password: hashPassword(defaultAdminPassword),
-                    isAdmin: true
-                };
-                localStorage.setItem('users', JSON.stringify(users));
-                alert('Un compte administrateur par défaut a été créé. Utilisateur: admin, Mot de passe: admin123');
-            }
+            createDefaultAdmin();
         });
+
         // Mise à jour du statut hors ligne lors de la fermeture de la page
         window.addEventListener('beforeunload', () => {
             if (currentUser) {
