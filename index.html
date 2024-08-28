@@ -132,16 +132,26 @@
             return bytes.toString(CryptoJS.enc.Utf8);
         }
 
-        function hashPassword(password) {
-            const salt = CryptoJS.lib.WordArray.random(128/8);
-            return salt.toString() + ':' + CryptoJS.PBKDF2(password, salt, { keySize: 256/32, iterations: 1000 }).toString();
-        }
+function hashPassword(password) {
+    const salt = CryptoJS.lib.WordArray.random(128/8);
+    const hashedPassword = CryptoJS.PBKDF2(password, salt, { keySize: 256/32, iterations: 1000 }).toString();
+    console.log('Hachage du mot de passe:');
+    console.log('Salt:', salt.toString());
+    console.log('Mot de passe hashé:', hashedPassword);
+    return salt.toString() + ':' + hashedPassword;
+}
 
-        function verifyPassword(password, hashedPassword) {
-            const [salt, key] = hashedPassword.split(':');
-            const derivedKey = CryptoJS.PBKDF2(password, salt, { keySize: 256/32, iterations: 1000 }).toString();
-            return key === derivedKey;
-        }
+       function verifyPassword(password, storedHash) {
+    console.log('Vérification du mot de passe:');
+    console.log('Mot de passe entré:', password);
+    console.log('Hash stocké:', storedHash);
+    const [storedSalt, storedKey] = storedHash.split(':');
+    console.log('Salt stocké:', storedSalt);
+    console.log('Clé stockée:', storedKey);
+    const derivedKey = CryptoJS.PBKDF2(password, storedSalt, { keySize: 256/32, iterations: 1000 }).toString();
+    console.log('Clé dérivée du mot de passe entré:', derivedKey);
+    return storedKey === derivedKey;
+}
 
         // Fonctions d'authentification
         function showLoginForm() {
@@ -186,6 +196,21 @@ function verifyPassword(password, hashedPassword) {
     console.log('Clé dérivée du mot de passe entré:', derivedKey);
     return key === derivedKey;
 }
+        function createDefaultAdmin() {
+    const users = JSON.parse(localStorage.getItem('users')) || {};
+    if (Object.keys(users).length === 0) {
+        const defaultAdminUsername = 'admin';
+        const defaultAdminPassword = 'admin123';
+        users[defaultAdminUsername] = { 
+            password: hashPassword(defaultAdminPassword),
+            isAdmin: true
+        };
+        localStorage.setItem('users', JSON.stringify(users));
+        console.log('Compte admin par défaut créé:', users[defaultAdminUsername]);
+        alert('Un compte administrateur par défaut a été créé. Utilisateur: admin, Mot de passe: admin123');
+    }
+}
+
 
 function login(e) {
     e.preventDefault();
@@ -459,7 +484,7 @@ function login(e) {
                 alert('Un compte administrateur par défaut a été créé. Utilisateur: admin, Mot de passe: admin123');
             }
         });
-
+        window.addEventListener('load', createDefaultAdmin);
         // Mise à jour du statut hors ligne lors de la fermeture de la page
         window.addEventListener('beforeunload', () => {
             if (currentUser) {
