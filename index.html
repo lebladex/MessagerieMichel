@@ -399,26 +399,46 @@ function login(e) {
                 document.getElementById('public-chat').style.display = 'block';
             }
         }
-
-          function showUserList() {
-            if (!isAdmin) {
-                alert("Vous n'avez pas les droits d'administrateur pour voir la liste des utilisateurs.");
-                return;
-            }
-            const users = JSON.parse(localStorage.getItem('users')) || {};
-            const userListContent = document.getElementById('user-list-content');
-            userListContent.innerHTML = '';
-            Object.keys(users).forEach(username => {
-                const userItem = document.createElement('li');
-                userItem.classList.add('list-group-item');
-                userItem.textContent = `${username} ${users[username].isAdmin ? '(Admin)' : ''}`;
-                userListContent.appendChild(userItem);
-            });
-            document.getElementById('public-chat').style.display = 'none';
-            document.getElementById('private-chat').style.display = 'none';
-            document.getElementById('create-user-form').style.display = 'none';
-            document.getElementById('user-list').style.display = 'block';
+// Ajoutez cette fonction pour supprimer un utilisateur
+function deleteUser(username) {
+    if (!isAdmin) {
+        alert("Vous n'avez pas les droits d'administrateur pour supprimer un utilisateur.");
+        return;
+    }
+    const users = JSON.parse(localStorage.getItem('users')) || {};
+    if (users[username]) {
+        if (confirm(`Êtes-vous sûr de vouloir supprimer l'utilisateur ${username} ?`)) {
+            delete users[username];
+            localStorage.setItem('users', JSON.stringify(users));
+            alert(`L'utilisateur ${username} a été supprimé.`);
+            showUserList(); // Rafraîchir la liste des utilisateurs
         }
+    } else {
+        alert(`L'utilisateur ${username} n'existe pas.`);
+    }
+}
+         function showUserList() {
+    if (!isAdmin) {
+        alert("Vous n'avez pas les droits d'administrateur pour voir la liste des utilisateurs.");
+        return;
+    }
+    const users = JSON.parse(localStorage.getItem('users')) || {};
+    const userListContent = document.getElementById('user-list-content');
+    userListContent.innerHTML = '';
+    Object.keys(users).forEach(username => {
+        const userItem = document.createElement('li');
+        userItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
+        userItem.innerHTML = `
+            ${username} ${users[username].isAdmin ? '(Admin)' : ''}
+            <button class="btn btn-danger btn-sm" onclick="deleteUser('${username}')">Supprimer</button>
+        `;
+        userListContent.appendChild(userItem);
+    });
+    document.getElementById('public-chat').style.display = 'none';
+    document.getElementById('private-chat').style.display = 'none';
+    document.getElementById('create-user-form').style.display = 'none';
+    document.getElementById('user-list').style.display = 'block';
+}
 
         // Gestionnaires d'événements
         document.getElementById('login-form-element').addEventListener('submit', login);
